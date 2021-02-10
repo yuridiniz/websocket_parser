@@ -3,6 +3,8 @@
         "handshake.h": "c",
         "stdlib.h": "c",
         "string.h": "c",
-        "bench.h": "c"
+        "bench.h": "c",
+        "b64.h": "c",
+        "sha1.h": "c"
     }
 }

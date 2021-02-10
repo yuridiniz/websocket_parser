@@ -31,7 +31,7 @@
 
 char * ws_strncat(char * dest, char * src, int len) {
     memcpy(dest, src, len);
-    dest[len] = 0;
+    dest[len] = '\0';
 
     return &dest[len];
 }
@@ -40,7 +40,7 @@ char * ws_strcat(char * dest, char * src) {
     int len = strlen(src);
 
     memcpy(dest, src, len);
-    dest[len] = 0;
+    dest[len] = '\0';
 
     return &dest[len];
 }
@@ -90,13 +90,18 @@ int
 ws_free(ws_handshake_response_t * response) {
     _WS_FREE(response->sec_websocket_accept);
     _WS_FREE(response->data);
-    // if(response->request != NULL) {
-    //     _WS_FREE(response->request->method);
-    //     _WS_FREE(response->request->path);
-    //     _WS_FREE(response->request->http_version);
-    //     _WS_FREE(response->request->host);
-    //     _WS_FREE(response->request->upgrade);
-    //     _WS_FREE(response->request->sec_websocket_key);
-    //     _WS_FREE(response->request->sec_websocket_version);
-    // }
+
+    #ifndef _WS_TEST_MOCK
+
+    if(response->request != NULL) {
+        _WS_FREE(response->request->method);
+        _WS_FREE(response->request->path);
+        _WS_FREE(response->request->http_version);
+        _WS_FREE(response->request->host);
+        _WS_FREE(response->request->upgrade);
+        _WS_FREE(response->request->sec_websocket_key);
+        _WS_FREE(response->request->sec_websocket_version);
+    }
+
+    #endif
 }
