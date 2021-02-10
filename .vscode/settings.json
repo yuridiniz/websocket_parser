@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "handshake.h": "c",
+        "stdlib.h": "c",
+        "string.h": "c",
+        "bench.h": "c"
+    }
+}

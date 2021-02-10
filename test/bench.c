@@ -1,0 +1,72 @@
+#include "bench/bench.h"
+#include "handshake.h"
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "b64/b64.h"
+#include "sha1/sha1.h"
+
+void do_sha1(int rep){
+
+    BENCHMARK(do_sha1, rep)
+
+    unsigned char *str = "dGhlIHNhbXBsZSBub25jZQ==258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+
+    unsigned char sha_out[20];
+
+    SHA1_CTX sha;
+    SHA1Init(&sha);
+    SHA1Update(&sha, str, strlen(str));
+    SHA1Final(sha_out, &sha);
+
+    END_BENCHMARK(do_sha1)
+    BENCHMARK_SUMMARY(do_sha1);
+}
+
+void do_b64(int rep)
+{
+    BENCHMARK(b64_alone, rep)
+
+    unsigned char *str = "1234567891234567890123";
+    char *enc = b64_encode(str, strlen(str));
+
+    free(enc);
+
+    END_BENCHMARK(b64_alone)
+    BENCHMARK_SUMMARY(b64_alone);
+}
+
+void do_ws_format_response(int rep)
+{
+    BENCHMARK(ws_formatter, rep)
+
+    ws_handshake_request_t request;
+    request.method = "GET";
+    request.path = "/chat";
+    request.http_version = "HTTP/1.1";
+    request.host = "localhost:8888";
+    request.upgrade = "websocket";
+    request.connection = "Upgrade";
+    request.sec_websocket_version = "13";
+    request.sec_websocket_key = "dGhlIHNhbXBsZSBub25jZQ==";
+
+    ws_handshake_response_t *response = ws_format_response(&request);
+
+    ws_free(response);
+
+    END_BENCHMARK(ws_formatter)
+    BENCHMARK_SUMMARY(ws_formatter);
+}
+
+int main()
+{
+    do_ws_format_response(1);
+    do_ws_format_response(10);
+    do_ws_format_response(50);
+
+    do_sha1(50);
+    do_b64(50);
+
+    return 0;
+}
