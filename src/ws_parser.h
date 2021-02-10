@@ -20,8 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef WS_HANDSHAE_PARSER_H
-#define WS_HANDSHAE_PARSER_H
+#ifndef WS_PARSER_H
+#define WS_PARSER_H
 
 #ifdef __cplusplus
 extern "C"{
@@ -39,6 +39,8 @@ Upgrade: websocket\r\n\
 Connection: Upgrade\r\n\
 Sec-WebSocket-Accept: "
 
+#define BUFFER_CLEAR(buf) buf[0] = '\0'
+#define BUFFER_SIZE(pointer, buf) (pointer - buf)
 
 typedef struct ws_handshake_request {
     char * method;
@@ -59,11 +61,16 @@ typedef struct ws_handshake_response {
 } ws_handshake_response_t;
 
 
-int ws_parser_request(char * request, int request_len, ws_handshake_request_t * ws_formmated);
+char * ws_strncat(char * dest, char * src, int len);
+char * ws_strcat(char * dest, char * src);
+
+ws_handshake_request_t * ws_parser_request(char * data, int data_len);
 
 ws_handshake_response_t * ws_format_response(ws_handshake_request_t * self);
 
-int ws_free(ws_handshake_response_t *);
+int ws_free_req(ws_handshake_request_t *);
+int ws_free_resp(ws_handshake_response_t *);
+
 
 #ifdef __cplusplus
 }

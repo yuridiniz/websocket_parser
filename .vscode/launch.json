@@ -24,11 +24,11 @@
         },
       },
       {
-        "name": "mqttd start (Release)",
+        "name": "Debug Test",
         "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/bin/Release/mqttd",
-        "args": ["start"],
+        "program": "${workspaceFolder}/test/test.out",
+        "args": [],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",
         "environment": [],
@@ -44,7 +44,6 @@
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb"
         },
-        "preLaunchTask": "build (release)",
-      }
+      },
     ]
   }

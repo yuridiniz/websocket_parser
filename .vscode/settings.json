@@ -5,6 +5,9 @@
         "string.h": "c",
         "bench.h": "c",
         "b64.h": "c",
-        "sha1.h": "c"
+        "sha1.h": "c",
+        "ws_parser.h": "c",
+        "strings.h": "c",
+        "ctype.h": "c"
     }
 }

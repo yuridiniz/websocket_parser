@@ -20,29 +20,43 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "handshake.h"
+#include "ws_parser.h"
 #include "sha1/sha1.h"
 #include "b64/b64.h"
+#include "strings.h"
+#include "ctype.h"
 
-#define _WS_FREE(arg) if(arg != NULL) free(arg)   
+#ifdef _MSC_VER 
+//not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
 
-#define BUFFER_CLEAR(buf) buf[0] = '\0'
-#define BUFFER_SIZE(pointer, buf) (pointer - buf)
+#define _WS_STATE_METHOD 0
+#define _WS_STATE_PATH 1
+#define _WS_STATE_HTTP_VERSION 2
+#define _WS_STATE_HOST 3
+#define _WS_STATE_UPGRADE 4
+#define _WS_STATE_CONNECTION 5
+#define _WS_STATE_SEC_KEY 6
+#define _WS_STATE_SEC_VERSION 7
 
-char * ws_strncat(char * dest, char * src, int len) {
-    memcpy(dest, src, len);
-    dest[len] = '\0';
+static int move_point_to(char ** pointer, char val, int limit);
+static char *ws_ltrim(char *s);
+static char *ws_rtrim(char *s);
+static char *ws_trim(char *s);
 
-    return &dest[len];
-}
+#define _WS_FREE(arg) if(arg != NULL) free(arg)
+#define WS_MOVE_TOKEN(pointer, token, limit) if(move_point_to(&pointer, token, limit) != 0) return NULL;
 
-char * ws_strcat(char * dest, char * src) {
-    int len = strlen(src);
+static int move_point_to(char ** pointer, char val, int limit) {
+    while(*(++*pointer) != val)
+    {
+        if(*(*pointer) == '\0' || (--limit) == -1)
+            return -1;
+    }
 
-    memcpy(dest, src, len);
-    dest[len] = '\0';
-
-    return &dest[len];
+    return 0;
 }
 
 ws_handshake_response_t * 
@@ -86,22 +100,155 @@ ws_format_response (ws_handshake_request_t * self) {
 }
 
 
-int 
-ws_free(ws_handshake_response_t * response) {
-    _WS_FREE(response->sec_websocket_accept);
-    _WS_FREE(response->data);
+ws_handshake_request_t * 
+ws_parser_request(char * data, int data_len) {
+    char buffer_key[64];
+    char buffer_val[64];
+    buffer_key[0] = '\0';
+    buffer_val[0] = '\0';
 
-    #ifndef _WS_TEST_MOCK
+    ws_handshake_request_t * request =  malloc(sizeof(ws_handshake_request_t));
 
-    if(response->request != NULL) {
-        _WS_FREE(response->request->method);
-        _WS_FREE(response->request->path);
-        _WS_FREE(response->request->http_version);
-        _WS_FREE(response->request->host);
-        _WS_FREE(response->request->upgrade);
-        _WS_FREE(response->request->sec_websocket_key);
-        _WS_FREE(response->request->sec_websocket_version);
+    char * pointer = data;
+    char * start_token = pointer;
+
+    int state = _WS_STATE_METHOD;
+
+    int pos = 0;
+    while(pos++ < data_len) 
+    {
+        if(state == _WS_STATE_METHOD || state == _WS_STATE_PATH || state == _WS_STATE_HTTP_VERSION) {
+            start_token = pointer;
+
+            pointer = memchr(pointer, ' ', 10);
+
+            int valsize = BUFFER_SIZE(pointer, start_token);
+
+            char * val = malloc((valsize + 1) * sizeof(char));
+            ws_strncat(val, start_token, valsize);
+
+            if(state == _WS_STATE_METHOD) {
+                request->method = val;
+            } else if(state == _WS_STATE_PATH) {
+                request->path = val;
+            } else if(state == _WS_STATE_HTTP_VERSION) {
+                request->http_version = val;
+            } else {
+                free(val);
+            }
+
+            state++;
+        } 
+        else if(state > _WS_STATE_HTTP_VERSION)
+        {
+            if(strncasecmp(pointer, "\r\n" , 2) == 0)
+                break;
+
+            BUFFER_CLEAR(buffer_key);
+            
+            start_token = pointer;
+            pointer = memchr(pointer, ':', 40);
+
+            ws_strncat(buffer_key, start_token, BUFFER_SIZE(pointer, start_token));
+
+            start_token = ++pointer;
+            pointer = memchr(pointer, '\r', 40);
+
+            int valsize = BUFFER_SIZE(pointer, start_token);
+            if(valsize + 1 > 64) {
+                //TODO Possível ataque;
+                break; 
+            }
+
+            ws_strncat(buffer_val, start_token, valsize);
+
+            char * trimmed_val = ws_trim(buffer_val);
+            char * trimmed_key = ws_trim(buffer_key);
+
+            int trimmed_val_size = strlen(trimmed_val);
+
+            char * val = malloc((trimmed_val_size + 1) * sizeof(char));
+            ws_strncat(val, trimmed_val, trimmed_val_size);
+
+            if(strncasecmp(trimmed_key, "host", 4) == 0) {
+                request->host = val;
+            }
+            else if(strncasecmp(trimmed_key, "upgrade", 7) == 0) {
+                request->upgrade = val;
+            }
+            else if(strncasecmp(trimmed_key, "connection", 10) == 0) {
+                request->connection = val;
+            }
+            else if(strncasecmp(trimmed_key, "sec-websocket-key", 17) == 0) {
+                request->sec_websocket_key = val;
+            }
+            else if(strncasecmp(trimmed_key, "sec-websocket-version", 21) == 0) {
+                request->sec_websocket_version = val;
+            }
+            else {
+                free(val);
+            }
+
+            pointer = memchr(pointer, '\n', 10);
+        }
+
+        ++pointer;
     }
 
-    #endif
+    return request;
+}
+
+
+int 
+ws_free_req(ws_handshake_request_t * request) {
+    _WS_FREE(request->method);
+    _WS_FREE(request->path);
+    _WS_FREE(request->http_version);
+    _WS_FREE(request->host);
+    _WS_FREE(request->upgrade);
+    _WS_FREE(request->sec_websocket_key);
+    _WS_FREE(request->sec_websocket_version);
+    _WS_FREE(request);
+}
+
+int 
+ws_free_resp(ws_handshake_response_t * response) {
+    _WS_FREE(response->sec_websocket_accept);
+    _WS_FREE(response->data);
+    _WS_FREE(response);
+}
+
+char * ws_strncat(char * dest, char * src, int len) {
+    memcpy(dest, src, len);
+    dest[len] = '\0';
+
+    return &dest[len];
+}
+
+char * ws_strcat(char * dest, char * src) {
+    int len = strlen(src);
+
+    memcpy(dest, src, len);
+    dest[len] = '\0';
+
+    return &dest[len];
+}
+
+static char *ws_ltrim(char *s)
+{
+    while(isspace(*s)) s++;
+    return s;
+}
+
+static char *ws_rtrim(char *s)
+{
+    char* back = s + strlen(s);
+    while(isspace(*--back));
+    *(back+1) = '\0';
+    return s;
+}
+
+static char *ws_trim(char *s)
+{
+    return ws_rtrim(ws_ltrim(s)); 
 }
