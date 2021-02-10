@@ -1,7 +1,7 @@
 #include "describe/describe.h"
 #include "ws_parser.h"
 
-#define REQUEST_HEADER "GET /chat HTTP/1.1 \
+#define REQUEST_HEADER "GET /chat HTTP/1.1 \r\n\
 Host: example.com:8000 \r\n\
 Upgrade: websocket \r\n\
 Connection: Upgrade \r\n\
@@ -9,8 +9,8 @@ Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
 Sec-WebSocket-Version: 13 \r\n\r\n"
 
 
-#define MALFORMATED_REQUEST_HEADER "GET /chat HTTP/1.1   \
-Host: example.com:8000 \r\n\
+#define MALFORMATED_REQUEST_HEADER "GET /chat HTTP/1.1\r\n\
+Host: example.com:8000\r\n\
 upgrade  :  websocket  \r\n\
   connection: Upgrade \r\n\
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
@@ -22,12 +22,16 @@ int main(void)
     {
         it("should parse request header")
         {
-            ws_handshake_request_t * request = ws_parser_request(REQUEST_HEADER, strlen(REQUEST_HEADER));
+            ws_handshake_request_t * request = ws_parser_request(MALFORMATED_REQUEST_HEADER, strlen(MALFORMATED_REQUEST_HEADER));
 
             assert_str_equal(request->method, "GET");
             assert_str_equal(request->path, "/chat");
+            assert_str_equal(request->http_version, "HTTP/1.1");
+            assert_str_equal(request->host, "example.com:8000");
             assert_str_equal(request->upgrade, "websocket");
             assert_str_equal(request->connection, "Upgrade");
+            assert_str_equal(request->sec_websocket_key, "dGhlIHNhbXBsZSBub25jZQ==");
+            assert_str_equal(request->sec_websocket_version, "13");
 
             ws_free_req(request);
         };

@@ -116,15 +116,25 @@ ws_parser_request(char * data, int data_len) {
     int pos = 0;
     while(pos++ < data_len) 
     {
-        if(state == _WS_STATE_METHOD || state == _WS_STATE_PATH || state == _WS_STATE_HTTP_VERSION) {
+        if(state == _WS_STATE_METHOD || state == _WS_STATE_PATH || state == _WS_STATE_HTTP_VERSION) 
+        {
             start_token = pointer;
 
-            pointer = memchr(pointer, ' ', 10);
+            int end_token = ' ';
+            if(state == _WS_STATE_HTTP_VERSION)
+                end_token = '\r';
+                    
+            pointer = memchr(pointer, end_token, 10);
+            if(pointer == NULL)
+                return NULL;
 
             int valsize = BUFFER_SIZE(pointer, start_token);
 
+            ws_strncat(buffer_val, start_token, valsize);
+            char * trimmed_val = ws_trim(buffer_val);
+            
             char * val = malloc((valsize + 1) * sizeof(char));
-            ws_strncat(val, start_token, valsize);
+            ws_strncat(val, trimmed_val, strlen(trimmed_val));
 
             if(state == _WS_STATE_METHOD) {
                 request->method = val;
@@ -143,21 +153,20 @@ ws_parser_request(char * data, int data_len) {
             if(strncasecmp(pointer, "\r\n" , 2) == 0)
                 break;
 
-            BUFFER_CLEAR(buffer_key);
-            
             start_token = pointer;
             pointer = memchr(pointer, ':', 40);
+            if(pointer == NULL)
+                return NULL;
 
             ws_strncat(buffer_key, start_token, BUFFER_SIZE(pointer, start_token));
 
             start_token = ++pointer;
+
             pointer = memchr(pointer, '\r', 40);
+            if(pointer == NULL)
+                return NULL;
 
             int valsize = BUFFER_SIZE(pointer, start_token);
-            if(valsize + 1 > 64) {
-                //TODO Possível ataque;
-                break; 
-            }
 
             ws_strncat(buffer_val, start_token, valsize);
 
@@ -189,6 +198,8 @@ ws_parser_request(char * data, int data_len) {
             }
 
             pointer = memchr(pointer, '\n', 10);
+            if(pointer == NULL)
+                return NULL;
         }
 
         ++pointer;
