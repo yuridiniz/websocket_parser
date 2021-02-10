@@ -46,9 +46,6 @@ static char *ws_ltrim(char *s);
 static char *ws_rtrim(char *s);
 static char *ws_trim(char *s);
 
-#define _WS_FREE(arg) if(arg != NULL) free(arg)
-#define WS_MOVE_TOKEN(pointer, token, limit) if(move_point_to(&pointer, token, limit) != 0) return NULL;
-
 static int move_point_to(char ** pointer, char val, int limit) {
     while(*(++*pointer) != val)
     {
@@ -211,22 +208,22 @@ ws_parser_request(char * data, int data_len) {
 
 int 
 ws_free_req(ws_handshake_request_t * request) {
-    _WS_FREE(request->method);
-    _WS_FREE(request->path);
-    _WS_FREE(request->http_version);
-    _WS_FREE(request->host);
-    _WS_FREE(request->upgrade);
-    _WS_FREE(request->connection);
-    _WS_FREE(request->sec_websocket_key);
-    _WS_FREE(request->sec_websocket_version);
-    _WS_FREE(request);
+    free(request->method);
+    free(request->path);
+    free(request->http_version);
+    free(request->host);
+    free(request->upgrade);
+    free(request->connection);
+    free(request->sec_websocket_key);
+    free(request->sec_websocket_version);
+    free(request);
 }
 
 int 
 ws_free_resp(ws_handshake_response_t * response) {
-    _WS_FREE(response->sec_websocket_accept);
-    _WS_FREE(response->data);
-    _WS_FREE(response);
+    free(response->sec_websocket_accept);
+    free(response->data);
+    free(response);
 }
 
 char * ws_strncat(char * dest, char * src, int len) {
