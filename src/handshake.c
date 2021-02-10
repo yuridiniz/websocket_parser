@@ -92,7 +92,6 @@ ws_format_response (ws_handshake_request_t * self) {
     ws_strcat(response_data, buffer);
 
     ws_handshake_response_t * response = calloc(0, sizeof(ws_handshake_response_t));
-    response->request = self;
     response->data = response_data;
     response->sec_websocket_accept = b64_out;
 
@@ -206,6 +205,7 @@ ws_free_req(ws_handshake_request_t * request) {
     _WS_FREE(request->http_version);
     _WS_FREE(request->host);
     _WS_FREE(request->upgrade);
+    _WS_FREE(request->connection);
     _WS_FREE(request->sec_websocket_key);
     _WS_FREE(request->sec_websocket_version);
     _WS_FREE(request);

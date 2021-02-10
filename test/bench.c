@@ -49,7 +49,7 @@ void do_b64(int rep)
 void do_ws_request_parser(int rep) {
     BENCHMARK(ws_request_parse, rep)
 
-     ws_handshake_request_t * request = ws_parser_request(REQUEST_HEADER, strlen(REQUEST_HEADER));
+    ws_handshake_request_t * request = ws_parser_request(REQUEST_HEADER, strlen(REQUEST_HEADER));
     ws_free_req(request);
 
     END_BENCHMARK(ws_request_parse)
@@ -79,12 +79,12 @@ void do_ws_format_response(int rep)
 
 int main()
 {
-    // do_ws_format_response(1);
-    // do_ws_format_response(10);
-    // do_ws_format_response(50);
+    do_ws_format_response(1);
+    do_ws_format_response(10);
+    do_ws_format_response(50);
 
-    // do_sha1(50);
-    // do_b64(50);
+    do_sha1(50);
+    do_b64(50);
 
     do_ws_request_parser(1);
     do_ws_request_parser(10);

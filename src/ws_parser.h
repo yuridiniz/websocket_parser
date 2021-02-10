@@ -55,7 +55,6 @@ typedef struct ws_handshake_request {
 
 
 typedef struct ws_handshake_response {
-    ws_handshake_request_t * request;
     char * sec_websocket_accept;
     char * data;
 } ws_handshake_response_t;
