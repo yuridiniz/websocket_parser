@@ -16,6 +16,29 @@ upgrade  :  websocket  \r\n\
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
 Sec-WebSocket-Version: 13 \r\n\r\n"
 
+
+#define INVALID_HEADER_1 "GET /chat HTTP/1.1 \
+Host: example.com:8000\r\n\
+upgrade  :  websocket  \r\n\
+connection: Upgrade \r\n\
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
+Sec-WebSocket-Version: 13 \r\n\r\n"
+
+#define INVALID_HEADER_2 "GET /chat HTTP/1.1 \
+Host: example.com:8000\r\n\
+:websocket  \r\n\
+connection: Upgrade \r\n\
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
+Sec-WebSocket-Version: 13 \r\n\r\n"
+
+
+#define INVALID_HEADER_3 "GET /chat  \
+::::\r\n\
+:websocket  \r\n\
+connection: Upgrade \r\n\
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
+Sec-WebSocket-Version: 13 \r\n\r\n"
+
 int main(void)
 {
     describe("handshake")
@@ -32,6 +55,27 @@ int main(void)
             assert_str_equal(request->connection, "Upgrade");
             assert_str_equal(request->sec_websocket_key, "dGhlIHNhbXBsZSBub25jZQ==");
             assert_str_equal(request->sec_websocket_version, "13");
+
+            ws_free_req(request);
+        };
+
+        it("avoid crash invalid header 1")
+        {
+            ws_handshake_request_t * request = ws_parser_request(INVALID_HEADER_1, strlen(INVALID_HEADER_1));
+
+            ws_free_req(request);
+        };
+
+        it("avoid crash invalid header 2")
+        {
+            ws_handshake_request_t * request = ws_parser_request(INVALID_HEADER_2, strlen(INVALID_HEADER_2));
+
+            ws_free_req(request);
+        };
+
+        it("avoid crash invalid header 3")
+        {
+            ws_handshake_request_t * request = ws_parser_request(INVALID_HEADER_3, strlen(INVALID_HEADER_3));
 
             ws_free_req(request);
         };

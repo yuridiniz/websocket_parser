@@ -67,8 +67,8 @@ ws_handshake_request_t * ws_parser_request(char * data, int data_len);
 
 ws_handshake_response_t * ws_format_response(ws_handshake_request_t * self);
 
-int ws_free_req(ws_handshake_request_t *);
-int ws_free_resp(ws_handshake_response_t *);
+void ws_free_req(ws_handshake_request_t *);
+void ws_free_resp(ws_handshake_response_t *);
 
 
 #ifdef __cplusplus

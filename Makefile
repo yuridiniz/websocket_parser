@@ -15,4 +15,10 @@ benchmark: FORCE
 	@ $(CC) -O3 -D_WS_TEST_MOCK -std=c99 $(BENCH) $(SRC) $(DEPS) $(TEST_DEPS) -o test/bench.out -Ideps -Itest/deps -Isrc
 	@ ./test/bench.out
 
+
+clean: 
+	rm -f test/*.out
+
 FORCE:
+
+.PHONY: clean

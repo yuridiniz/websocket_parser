@@ -7,15 +7,15 @@
 #include "b64/b64.h"
 #include "sha1/sha1.h"
 
-
-#define REQUEST_HEADER "GET /chat HTTP/1.1 \
+#define REQUEST_HEADER "GET /chat HTTP/1.1 \r\n\
 Host: example.com:8000 \r\n\
 Upgrade: websocket \r\n\
 Connection: Upgrade \r\n\
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
 Sec-WebSocket-Version: 13 \r\n\r\n"
 
-void do_sha1(int rep){
+void do_sha1(int rep)
+{
 
     BENCHMARK(do_sha1, rep)
 
@@ -45,11 +45,11 @@ void do_b64(int rep)
     BENCHMARK_SUMMARY(b64_alone);
 }
 
-
-void do_ws_request_parser(int rep) {
+void do_ws_request_parser(int rep)
+{
     BENCHMARK(ws_request_parse, rep)
 
-    ws_handshake_request_t * request = ws_parser_request(REQUEST_HEADER, strlen(REQUEST_HEADER));
+    ws_handshake_request_t *request = ws_parser_request(REQUEST_HEADER, strlen(REQUEST_HEADER));
     ws_free_req(request);
 
     END_BENCHMARK(ws_request_parse)
