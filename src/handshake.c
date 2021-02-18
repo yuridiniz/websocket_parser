@@ -41,20 +41,9 @@
 #define _WS_STATE_SEC_KEY 6
 #define _WS_STATE_SEC_VERSION 7
 
-static int move_point_to(char ** pointer, char val, int limit);
 static char *ws_ltrim(char *s);
 static char *ws_rtrim(char *s);
 static char *ws_trim(char *s);
-
-static int move_point_to(char ** pointer, char val, int limit) {
-    while(*(++*pointer) != val)
-    {
-        if(*(*pointer) == '\0' || (--limit) == -1)
-            return -1;
-    }
-
-    return 0;
-}
 
 ws_handshake_response_t * 
 ws_format_response (ws_handshake_request_t * self) {
@@ -147,7 +136,7 @@ ws_parser_request(char * data, int data_len) {
         } 
         else if(state > _WS_STATE_HTTP_VERSION)
         {
-            if(strncasecmp(pointer, "\r\n" , 2) == 0)
+            if(strncmp(pointer, "\r\n" , 2) == 0)
                 break;
 
             start_token = pointer;
@@ -169,29 +158,32 @@ ws_parser_request(char * data, int data_len) {
 
             char * trimmed_val = ws_trim(buffer_val);
             char * trimmed_key = ws_trim(buffer_key);
+            
+            for(int i = 0; trimmed_key[i]; i++){
+              trimmed_key[i] = tolower(trimmed_key[i]);
+            }
 
             int trimmed_val_size = strlen(trimmed_val);
 
-            char * val = malloc((trimmed_val_size + 1) * sizeof(char));
-            ws_strncat(val, trimmed_val, trimmed_val_size);
-
-            if(strncasecmp(trimmed_key, "host", 4) == 0) {
-                request->host = val;
+            if(strncmp(trimmed_key, "host", 4) == 0) {
+                request->host = malloc((trimmed_val_size + 1) * sizeof(char));
+                ws_strncat(request->host, trimmed_val, trimmed_val_size);
             }
-            else if(strncasecmp(trimmed_key, "upgrade", 7) == 0) {
-                request->upgrade = val;
+            else if(strncmp(trimmed_key, "upgrade", 7) == 0) {
+                request->upgrade = malloc((trimmed_val_size + 1) * sizeof(char));
+                ws_strncat(request->upgrade, trimmed_val, trimmed_val_size);
             }
-            else if(strncasecmp(trimmed_key, "connection", 10) == 0) {
-                request->connection = val;
+            else if(strncmp(trimmed_key, "connection", 10) == 0) {
+                request->connection = malloc((trimmed_val_size + 1) * sizeof(char));
+                ws_strncat(request->connection, trimmed_val, trimmed_val_size);
             }
-            else if(strncasecmp(trimmed_key, "sec-websocket-key", 17) == 0) {
-                request->sec_websocket_key = val;
+            else if(strncmp(trimmed_key, "sec-websocket-key", 17) == 0) {
+                request->sec_websocket_key = malloc((trimmed_val_size + 1) * sizeof(char));
+                ws_strncat(request->sec_websocket_key, trimmed_val, trimmed_val_size);
             }
-            else if(strncasecmp(trimmed_key, "sec-websocket-version", 21) == 0) {
-                request->sec_websocket_version = val;
-            }
-            else {
-                free(val);
+            else if(strncmp(trimmed_key, "sec-websocket-version", 21) == 0) {
+                request->sec_websocket_version = malloc((trimmed_val_size + 1) * sizeof(char));
+                ws_strncat(request->sec_websocket_version, trimmed_val, trimmed_val_size);
             }
 
             pointer = memchr(pointer, '\n', 10);
