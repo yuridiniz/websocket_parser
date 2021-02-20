@@ -8,14 +8,12 @@ Connection: Upgrade \r\n\
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
 Sec-WebSocket-Version: 13 \r\n\r\n"
 
-
 #define MALFORMATED_REQUEST_HEADER "GET /chat HTTP/1.1\r\n\
 Host: example.com:8000\r\n\
 upgrade  :  websocket  \r\n\
   connection: Upgrade \r\n\
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
 Sec-WebSocket-Version: 13 \r\n\r\n"
-
 
 #define INVALID_HEADER_1 "GET /chat HTTP/1.1 \
 Host: example.com:8000\r\n\
@@ -31,7 +29,6 @@ connection: Upgrade \r\n\
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
 Sec-WebSocket-Version: 13 \r\n\r\n"
 
-
 #define INVALID_HEADER_3 "GET /chat  \
 ::::\r\n\
 :websocket  \r\n\
@@ -45,7 +42,7 @@ int main(void)
     {
         it("should parse request header")
         {
-            ws_handshake_request_t * request = ws_parser_request(MALFORMATED_REQUEST_HEADER, strlen(MALFORMATED_REQUEST_HEADER));
+            ws_handshake_request_t *request = ws_parser_request(MALFORMATED_REQUEST_HEADER, strlen(MALFORMATED_REQUEST_HEADER));
 
             assert_str_equal(request->method, "GET");
             assert_str_equal(request->path, "/chat");
@@ -61,21 +58,21 @@ int main(void)
 
         it("avoid crash invalid header 1")
         {
-            ws_handshake_request_t * request = ws_parser_request(INVALID_HEADER_1, strlen(INVALID_HEADER_1));
+            ws_handshake_request_t *request = ws_parser_request(INVALID_HEADER_1, strlen(INVALID_HEADER_1));
 
             ws_free_req(request);
         };
 
         it("avoid crash invalid header 2")
         {
-            ws_handshake_request_t * request = ws_parser_request(INVALID_HEADER_2, strlen(INVALID_HEADER_2));
+            ws_handshake_request_t *request = ws_parser_request(INVALID_HEADER_2, strlen(INVALID_HEADER_2));
 
             ws_free_req(request);
         };
 
         it("avoid crash invalid header 3")
         {
-            ws_handshake_request_t * request = ws_parser_request(INVALID_HEADER_3, strlen(INVALID_HEADER_3));
+            ws_handshake_request_t *request = ws_parser_request(INVALID_HEADER_3, strlen(INVALID_HEADER_3));
 
             ws_free_req(request);
         };
@@ -101,9 +98,10 @@ int main(void)
 
         it("complete websocket hendshake")
         {
-            ws_handshake_request_t * request = ws_parser_request(REQUEST_HEADER, strlen(REQUEST_HEADER));
+            ws_handshake_request_t *request = ws_parser_request(REQUEST_HEADER, strlen(REQUEST_HEADER));
 
-            if(request != NULL) {
+            if (request != NULL)
+            {
                 ws_handshake_response_t *response = ws_format_response(request);
                 assert_str_equal(response->sec_websocket_accept, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=");
 
@@ -113,6 +111,22 @@ int main(void)
             ws_free_req(request);
         };
     };
+
+    describe("dataframe")
+    {
+        it("Websocket header size")
+        {
+            unsigned char out[1024];
+            char * test = "meu texto qualquer";
+            int msg_size = strlen(test);
+            
+            int espected = 14 + msg_size; //Payload header + tamanho da mensagem
+
+            int len = ws_encode(out, 1024, test, msg_size);
+
+            assert_equal(len, espected);
+        };
+    }
 
     return assert_failures();
 }

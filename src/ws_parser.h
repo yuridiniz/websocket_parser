@@ -64,8 +64,10 @@ char * ws_strncat(char * dest, char * src, int len);
 char * ws_strcat(char * dest, char * src);
 
 ws_handshake_request_t * ws_parser_request(char * data, int data_len);
-
 ws_handshake_response_t * ws_format_response(ws_handshake_request_t * self);
+
+int ws_decode(unsigned char * out, int out_len, char * in, int in_len);
+int ws_encode(unsigned char * out, int out_len, char * in, int in_len);
 
 void ws_free_req(ws_handshake_request_t *);
 void ws_free_resp(ws_handshake_response_t *);
