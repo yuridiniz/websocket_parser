@@ -8,6 +8,15 @@ Connection: Upgrade \r\n\
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
 Sec-WebSocket-Version: 13 \r\n\r\n"
 
+#define REQUEST_CUSTOM_HEADER "GET /chat HTTP/1.1 \r\n\
+Host: example.com:8000 \r\n\
+Upgrade: websocket \r\n\
+Connection: Upgrade \r\n\
+Custom: custom-header-value \r\n\
+Custom-Big: big-custom-very-big-very-big-very-big-very-big-very-big-very-big-very-big-very-big-very-big-very-big-very-big-very-very-very-very-very-very-big-custom-header-value \r\n\
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ== \r\n\
+Sec-WebSocket-Version: 13 \r\n\r\n"
+
 #define MALFORMATED_REQUEST_HEADER "GET /chat HTTP/1.1\r\n\
 Host: example.com:8000\r\n\
 upgrade  :  websocket  \r\n\
@@ -55,6 +64,23 @@ int main(void)
 
             ws_free_req(request);
         };
+
+        it("should parse request header with unexpected big values")
+        {
+            ws_handshake_request_t *request = ws_parser_request(REQUEST_CUSTOM_HEADER, strlen(REQUEST_CUSTOM_HEADER));
+
+            assert_str_equal(request->method, "GET");
+            assert_str_equal(request->path, "/chat");
+            assert_str_equal(request->http_version, "HTTP/1.1");
+            assert_str_equal(request->host, "example.com:8000");
+            assert_str_equal(request->upgrade, "websocket");
+            assert_str_equal(request->connection, "Upgrade");
+            assert_str_equal(request->sec_websocket_key, "dGhlIHNhbXBsZSBub25jZQ==");
+            assert_str_equal(request->sec_websocket_version, "13");
+
+            ws_free_req(request);
+        };
+
 
         it("avoid crash invalid header 1")
         {
@@ -114,13 +140,26 @@ int main(void)
 
     describe("dataframe")
     {
-        it("Websocket header size")
+        // it("Websocket header size > 125")
+        // {
+        //     unsigned char out[1024];
+        //     char * test = "meu texto qualquer";
+        //     int msg_size = strlen(test);
+            
+        //     int espected = 14 + msg_size; //Payload header + tamanho da mensagem
+
+        //     int len = ws_encode(out, 1024, test, msg_size);
+
+        //     assert_equal(len, espected);
+        // };
+
+        it("Websocket header size < 125 unmasked")
         {
             unsigned char out[1024];
             char * test = "meu texto qualquer";
             int msg_size = strlen(test);
             
-            int espected = 14 + msg_size; //Payload header + tamanho da mensagem
+            int espected = 2 + msg_size; //Payload header + tamanho da mensagem
 
             int len = ws_encode(out, 1024, test, msg_size);
 

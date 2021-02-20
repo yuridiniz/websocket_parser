@@ -44,7 +44,7 @@
 static char *ws_ltrim(char *s);
 static char *ws_rtrim(char *s);
 static char *ws_trim(char *s);
-static int set_val(char **prop, char *val);
+static int set_val(char **prop, char **pointer, int token_divisor);
 
 ws_handshake_response_t *
 ws_format_response(ws_handshake_request_t *self)
@@ -90,19 +90,12 @@ ws_handshake_request_t *
 ws_parser_request(char *data, int data_len)
 {
     char buffer_key[64];
-    char buffer_val[64];
     buffer_key[0] = '\0';
-    buffer_val[0] = '\0';
+    
 
     ws_handshake_request_t *request = malloc(sizeof(ws_handshake_request_t));
-    request->connection = NULL;
-    request->method = NULL;
-    request->http_version = NULL;
-    request->path = NULL;
-    request->host = NULL;
-    request->sec_websocket_key = NULL;
-    request->sec_websocket_version = NULL;
-    request->upgrade = NULL;
+    memset(request, 0, sizeof(ws_handshake_request_t));
+   
 
     char *pointer = data;
     char *start_token = pointer;
@@ -114,33 +107,21 @@ ws_parser_request(char *data, int data_len)
     {
         if (state == _WS_STATE_METHOD || state == _WS_STATE_PATH || state == _WS_STATE_HTTP_VERSION)
         {
-            start_token = pointer;
-
             int end_token = ' ';
             if (state == _WS_STATE_HTTP_VERSION)
                 end_token = '\r';
 
-            pointer = memchr(pointer, end_token, 10);
-            if (pointer == NULL) {
-                ws_free_req(request);
-                return NULL;
-            }
-
-            int valsize = BUFFER_SIZE(pointer, start_token);
-
-            ws_strncat(buffer_val, start_token, valsize);
-
             if (state == _WS_STATE_METHOD)
             {
-                set_val(&request->method, buffer_val);
+                set_val(&request->method, &pointer, end_token);
             }
             else if (state == _WS_STATE_PATH)
             {
-                set_val(&request->path, buffer_val);
+                set_val(&request->path, &pointer, end_token);
             }
             else if (state == _WS_STATE_HTTP_VERSION)
             {
-                set_val(&request->http_version, buffer_val);
+                set_val(&request->http_version, &pointer, end_token);
             }
 
             state++;
@@ -152,20 +133,12 @@ ws_parser_request(char *data, int data_len)
 
             start_token = pointer;
             pointer = memchr(pointer, ':', 40);
-            if (pointer == NULL)
+            if (pointer == NULL){
+                ws_free_req(request);
                 return NULL;
+            }
 
             ws_strncat(buffer_key, start_token, BUFFER_SIZE(pointer, start_token));
-
-            start_token = ++pointer;
-
-            pointer = memchr(pointer, '\r', 40);
-            if (pointer == NULL)
-                return NULL;
-
-            int valsize = BUFFER_SIZE(pointer, start_token);
-
-            ws_strncat(buffer_val, start_token, valsize);
 
             char *trimmed_key = ws_trim(buffer_key);
 
@@ -174,25 +147,40 @@ ws_parser_request(char *data, int data_len)
                 trimmed_key[i] = tolower(trimmed_key[i]);
             }
 
+            ++pointer;
+
+            int val_result = 0;
             if (strncmp(trimmed_key, "host", 4) == 0)
             {
-                set_val(&request->host, buffer_val);
+                val_result = set_val(&request->host, &pointer, '\r');
             }
             else if (strncmp(trimmed_key, "upgrade", 7) == 0)
             {
-                set_val(&request->upgrade, buffer_val);
+                val_result = set_val(&request->upgrade, &pointer, '\r');
             }
             else if (strncmp(trimmed_key, "connection", 10) == 0)
             {
-                set_val(&request->connection, buffer_val);
+                val_result = set_val(&request->connection, &pointer, '\r');
             }
             else if (strncmp(trimmed_key, "sec-websocket-key", 17) == 0)
             {
-                set_val(&request->sec_websocket_key, buffer_val);
+                val_result = set_val(&request->sec_websocket_key, &pointer, '\r');
             }
             else if (strncmp(trimmed_key, "sec-websocket-version", 21) == 0)
             {
-                set_val(&request->sec_websocket_version, buffer_val);
+                val_result = set_val(&request->sec_websocket_version, &pointer, '\r');
+            }
+
+            if(val_result == 1) {
+                pointer = memchr(pointer, '\n', 10);
+               
+            }
+            else if(val_result == 0) {
+                pointer = memchr(pointer, '\n', data_len - pos);
+            }
+            else if(val_result == 1) {
+                 ws_free_req(request);
+                return NULL;
             }
 
             pointer = memchr(pointer, '\n', 10);
@@ -208,9 +196,23 @@ ws_parser_request(char *data, int data_len)
     return request;
 }
 
-static int set_val(char** prop, char *val)
+static int set_val(char** prop, char ** pointer, int token_dividor)
 {
-    char * trimmed_val = ws_trim(val);
+    char * start_token = *pointer;
+
+    *pointer = memchr(*pointer, token_dividor, 40);
+    if (*pointer == NULL) {
+        return -1;
+    }
+
+    int valsize = BUFFER_SIZE(*pointer, start_token);
+
+    char buffer_val[valsize];
+    buffer_val[0] = '\0';
+
+    ws_strncat(buffer_val, start_token, valsize);
+
+    char * trimmed_val = ws_trim(buffer_val);
 
     int trimmed_val_size = strlen(trimmed_val);
 
@@ -219,7 +221,7 @@ static int set_val(char** prop, char *val)
         return -1;
 
     ws_strncat(*prop, trimmed_val, trimmed_val_size);
-    return 0;
+    return 1;
 }
 
 void ws_free_req(ws_handshake_request_t *request)
