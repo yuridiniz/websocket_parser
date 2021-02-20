@@ -4,7 +4,7 @@
   "src": [
     "src/data_frame.c",
     "src/handshake.c",
-    "src/ws_parse.h"
+    "src/ws_parser.h"
   ],
   "dependencies": {
     "sha1": "0.0.1",
