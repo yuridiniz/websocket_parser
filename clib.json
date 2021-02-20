@@ -2,8 +2,9 @@
   "name": "websocket_parser",
   "version": "0.1.0",
   "src": [
-    "handshake.c",
-    "handshake.h"
+    "src/data_frame.c",
+    "src/handshake.c",
+    "src/ws_parser.h"
   ],
   "dependencies": {
     "sha1": "0.0.1",
