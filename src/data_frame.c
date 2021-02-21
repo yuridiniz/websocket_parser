@@ -22,29 +22,29 @@
 
 #include "ws_parser.h"
 
-static char * encode_fin(unsigned char * out) {
+static unsigned char * encode_fin(unsigned char * out) {
     *out |= (1 << 7);
     return out;
 }
 
-static char * encode_reserv(unsigned char * out) {
+static unsigned char * encode_reserv(unsigned char * out) {
     *out |= (0 << 6);
     *out |= (0 << 5);
     *out |= (0 << 4);
     return out;
 }
 
-static char * encode_opcode(unsigned char * out, char val) {
+static unsigned char * encode_opcode(unsigned char * out, char val) {
     *out |= (val);
     return ++out;
 }
 
-static char * encode_mask(unsigned char * out) {
+static unsigned char * encode_mask(unsigned char * out) {
     *out |= (0 << 7);
     return out;
 }
 
-static char * encode_payload_len(unsigned char * out, int len) {
+static unsigned char * encode_payload_len(unsigned char * out, int len) {
     *out++ |= (len << 0);
 
     if(len > 125) {
@@ -56,25 +56,23 @@ static char * encode_payload_len(unsigned char * out, int len) {
     return out;
 }
 
-static char * encode_payload_data(unsigned char * out, char * in, int in_len) {
+static unsigned char * encode_payload_data(unsigned char * out, char * in, int in_len) {
     memcpy(out, in, in_len);
     out[in_len] = '\0';
     return &out[in_len];
 }
 
-static char * encode_mask_key(unsigned char * out) {
+static unsigned char * encode_mask_key(unsigned char * out) {
     int next_sizes = (2 + 2);
     return &out[next_sizes];
 }
 
 int ws_decode(unsigned char * out, int out_len, char * in, int in_len) {
-    
+    return 0;
 }
 
 int ws_encode(unsigned char * out, int out_len, char * in, int in_len) {
     memset(out, 0x0, out_len);
-
-    int encoded_len = 0;
 
     unsigned char * pointer = out;
     pointer = encode_fin(pointer);

@@ -61,7 +61,7 @@ ws_format_response(ws_handshake_request_t *self)
 
     SHA1_CTX sha;
     SHA1Init(&sha);
-    SHA1Update(&sha, buffer, BUFFER_SIZE(p, buffer));
+    SHA1Update(&sha, (unsigned char*)  buffer, BUFFER_SIZE(p, buffer));
     SHA1Final(sha_out, &sha);
 
     char *b64_out = b64_encode(sha_out, 20);
@@ -73,7 +73,7 @@ ws_format_response(ws_handshake_request_t *self)
     p = ws_strcat(p, b64_out);
     p = ws_strcat(p, "\r\n\r\n");
 
-    char *response_data = malloc((BUFFER_SIZE(p, buffer) + 1) * sizeof(char));
+    char *response_data = malloc((BUFFER_SIZE(p, buffer)) * sizeof(char));
 
     BUFFER_CLEAR(response_data);
 
